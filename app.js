@@ -46,8 +46,7 @@ async function loadNotes() {
     const data = await response.json();
     notes = data.map(note => ({
       ...note,
-      stageId: note.stage_id,
-      content: note.actes || note.reflexions || note.apprentissages || note.note || ''
+      stageId: note.stage_id
     }));
   } catch (error) {
     console.error('Erreur chargement notes:', error);
@@ -305,12 +304,10 @@ function renderStages() {
   `).join('');
 }
 
-// Sauve garder une note
+// Sauvegarder une note
 async function saveNote() {
   const stageId = document.getElementById('stage-select').value;
-  const actes = document.getElementById('note-actes')?.value?.trim() || '';
-  const reflexions = document.getElementById('note-reflexions')?.value?.trim() || '';
-  const apprentissages = document.getElementById('note-apprentissages')?.value?.trim() || '';
+  const content = document.getElementById('note-content').value.trim();
   const selectedDate = document.getElementById('selected-date').value;
 
   if (!selectedMood) {
@@ -323,8 +320,8 @@ async function saveNote() {
     return;
   }
 
-  if (!actes && !reflexions && !apprentissages) {
-    showToast('Écris au moins quelque chose ! ✏️');
+  if (!content) {
+    showToast('Écris quelque chose dans la note ! ✏️');
     return;
   }
 
@@ -336,9 +333,7 @@ async function saveNote() {
         stage_id: parseInt(stageId),
         date: selectedDate,
         mood: selectedMood,
-        actes: actes,
-        reflexions: reflexions,
-        apprentissages: apprentissages
+        note: content
       })
     });
 
@@ -348,9 +343,7 @@ async function saveNote() {
     await loadNotes();
 
     // Réinitialiser le formulaire
-    if (document.getElementById('note-actes')) document.getElementById('note-actes').value = '';
-    if (document.getElementById('note-reflexions')) document.getElementById('note-reflexions').value = '';
-    if (document.getElementById('note-apprentissages')) document.getElementById('note-apprentissages').value = '';
+    document.getElementById('note-content').value = '';
     document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
     selectedMood = null;
 
@@ -729,12 +722,14 @@ async function deleteStage(stageId) {
     try {
       const response = await fetch(`/api/stages/${stageId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Erreur suppression stage');
-      
+
       await loadStages();
-      initStageSelector();
+      await loadNotes();
+      
       renderStages();
       renderNotes();
       renderStats();
+      initStageSelector();
       showToast('Stage supprimé ! 🗑️');
     } catch (error) {
       console.error('Erreur suppression stage:', error);
@@ -743,16 +738,59 @@ async function deleteStage(stageId) {
   }
 }
 
-// Modal nouveau stage
+// Jours fériés français 2025
+const JOURS_FERIES_2025 = [
+  '2025-01-01', // Jour de l'an
+  '2025-04-21', // Lundi de Pâques
+  '2025-05-01', // Fête du travail
+  '2025-05-08', // Victoire 1945
+  '2025-05-29', // Ascension
+  '2025-06-09', // Lundi de Pentecôte
+  '2025-07-14', // Fête nationale
+  '2025-08-15', // Assomption
+  '2025-11-01', // Toussaint
+  '2025-11-11', // Armistice 1918
+  '2025-12-25'  // Noël
+];
+
+// Calculer les jours ouvrés (sans samedi, dimanche et jours fériés)
+function calculateWorkingDays(dateDebut, dateFin) {
+  if (!dateDebut || !dateFin) return 0;
+  
+  const debut = new Date(dateDebut);
+  const fin = new Date(dateFin);
+  
+  if (debut > fin) return 0;
+  
+  let workingDays = 0;
+  let currentDate = new Date(debut);
+  
+  while (currentDate <= fin) {
+    const dayOfWeek = currentDate.getDay();
+    const dateString = currentDate.toISOString().split('T')[0];
+    
+    // Exclure samedi (6) et dimanche (0), et les jours fériés
+    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !JOURS_FERIES_2025.includes(dateString)) {
+      workingDays++;
+    }
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return workingDays;
+}
+
+// Ouvrir le modal de création de stage
 function openNewStageModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
+  modal.id = 'new-stage-modal';
   modal.innerHTML = `
     <div class="modal">
-      <h2>➕ Nouveau stage</h2>
+      <h2>➕ Nouveau Stage</h2>
       <form id="new-stage-form" onsubmit="return false;">
         <div class="form-group">
-          <label>Modalité</label>
+          <label>Modalité *</label>
           <select id="new-modality" required>
             <option value="">Choisis une modalité</option>
             <option value="nucleaire">☢️ Médecine Nucléaire</option>
@@ -765,28 +803,32 @@ function openNewStageModal() {
           </select>
         </div>
         <div class="form-group">
-          <label>Nom du lieu</label>
-          <input type="text" id="new-lieu" required placeholder="Ex: CHU de Bordeaux">
+          <label>Lieu du stage *</label>
+          <input type="text" id="new-lieu" placeholder="Ex: CHU Bordeaux" required>
         </div>
         <div class="form-group">
-          <label>Date de début</label>
+          <label>Nom du cadre</label>
+          <input type="text" id="new-cadre" placeholder="Ex: Mme Dubois">
+        </div>
+        <div class="form-group">
+          <label>Nom du tuteur</label>
+          <input type="text" id="new-tuteur" placeholder="Ex: Dr Martin">
+        </div>
+        <div class="form-group">
+          <label>Date de début *</label>
           <input type="date" id="new-debut" required>
         </div>
         <div class="form-group">
-          <label>Date de fin</label>
+          <label>Date de fin *</label>
           <input type="date" id="new-fin" required>
         </div>
-        <div class="form-group">
-          <label>Tuteur</label>
-          <input type="text" id="new-tuteur" placeholder="Ex: Dr Dupont">
-        </div>
-        <div class="form-group">
-          <label>Cadre</label>
-          <input type="text" id="new-cadre" placeholder="Ex: M. Martin">
+        <div id="workdays-info" class="workdays-display" style="display: none;">
+          <span class="days-count">0</span> jours ouvrés<br>
+          <span style="font-size: 0.9rem; font-weight: normal;">(sans weekends ni jours fériés)</span>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
-          <button type="button" class="btn-primary" onclick="createNewStage()">✅ Créer</button>
+          <button type="button" class="btn-primary" onclick="createNewStage()">➕ Créer le stage</button>
         </div>
       </form>
     </div>
@@ -794,84 +836,96 @@ function openNewStageModal() {
   
   document.body.appendChild(modal);
   setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Écouter les changements de dates
+  const debutInput = document.getElementById('new-debut');
+  const finInput = document.getElementById('new-fin');
+  
+  const updateWorkdays = () => {
+    const debut = debutInput.value;
+    const fin = finInput.value;
+    
+    if (debut && fin) {
+      const workdays = calculateWorkingDays(debut, fin);
+      const display = document.getElementById('workdays-info');
+      display.style.display = 'block';
+      display.querySelector('.days-count').textContent = workdays;
+    }
+  };
+  
+  debutInput.addEventListener('change', updateWorkdays);
+  finInput.addEventListener('change', updateWorkdays);
 }
 
 // Créer un nouveau stage
-async function createNewStage() {
+function createNewStage() {
   const modality = document.getElementById('new-modality').value;
   const lieu = document.getElementById('new-lieu').value.trim();
-  const dateDebut = document.getElementById('new-debut').value;
-  const dateFin = document.getElementById('new-fin').value;
-  const tuteur = document.getElementById('new-tuteur').value.trim();
   const cadre = document.getElementById('new-cadre').value.trim();
-
-  if (!modality || !lieu || !dateDebut || !dateFin) {
+  const tuteur = document.getElementById('new-tuteur').value.trim();
+  const debut = document.getElementById('new-debut').value;
+  const fin = document.getElementById('new-fin').value;
+  
+  if (!modality || !lieu || !debut || !fin) {
     showToast('Remplis tous les champs obligatoires ! 📝');
     return;
   }
-
-  const emojiMap = {
-    nucleaire: '☢️',
-    radiotherapie: '💥',
-    scanner: '🌀',
-    irm: '🧲',
-    conventionnelle: '🩻',
-    interventionnelle: '🫀',
-    echographie: '🦇'
+  
+  if (new Date(debut) > new Date(fin)) {
+    showToast('La date de fin doit être après la date de début ! 📅');
+    return;
+  }
+  
+  // Trouver l'emoji et le nom de la modalité
+  const MODALITY_INFO = {
+    nucleaire: { emoji: '☢️', name: 'Médecine Nucléaire' },
+    radiotherapie: { emoji: '💥', name: 'Radiothérapie' },
+    scanner: { emoji: '🌀', name: 'Scanner' },
+    irm: { emoji: '🧲', name: 'IRM' },
+    conventionnelle: { emoji: '🩻', name: 'Conventionnelle' },
+    interventionnelle: { emoji: '🫀', name: 'Interventionnelle' },
+    echographie: { emoji: '🦇', name: 'Échographie' }
   };
-
-  const joursTravailles = calculateWorkingDays(dateDebut, dateFin);
-
-  try {
-    const response = await fetch('/api/stages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: lieu,
-        modality: modality,
-        emoji: emojiMap[modality],
-        lieu: lieu,
-        tuteur: tuteur,
-        cadre: cadre,
-        date_debut: dateDebut,
-        date_fin: dateFin,
-        jours_travailles: joursTravailles
-      })
-    });
-
+  
+  const info = MODALITY_INFO[modality];
+  
+  const joursTravailles = calculateWorkingDays(debut, fin);
+  
+  // Créer le nouveau stage via l'API
+  fetch('/api/stages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: lieu,
+      modality: modality,
+      emoji: info.emoji,
+      lieu: lieu,
+      tuteur: tuteur || 'Non renseigné',
+      cadre: cadre || 'Non renseigné',
+      date_debut: debut,
+      date_fin: fin,
+      jours_travailles: joursTravailles
+    })
+  })
+  .then(response => {
     if (!response.ok) throw new Error('Erreur création stage');
-
-    await loadStages();
-    initStageSelector();
+    return loadStages();
+  })
+  .then(() => {
     closeModal();
     renderStages();
-    showToast('Stage créé ! 🎉');
-  } catch (error) {
+    initStageSelector();
+    showToast(`Stage "${lieu}" créé ! 🎉`);
+  })
+  .catch(error => {
     console.error('Erreur création stage:', error);
     showToast('Erreur lors de la création ❌');
-  }
-}
-
-// Calculer les jours ouvrables entre deux dates
-function calculateWorkingDays(startDate, endDate) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  let count = 0;
-  const current = new Date(start);
-  
-  while (current <= end) {
-    const dayOfWeek = current.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      count++;
-    }
-    current.setDate(current.getDate() + 1);
-  }
-  
-  return count;
+  });
 }
 
 // Initialiser le formulaire d'évaluation
 function initEvaluationForm() {
+  // Remplir le sélecteur de stages
   const evalStageSelect = document.getElementById('eval-stage-select');
   evalStageSelect.innerHTML = '<option value="">Sélectionne un stage</option>';
   
@@ -882,16 +936,14 @@ function initEvaluationForm() {
     evalStageSelect.appendChild(option);
   });
 
-  // Écouter les changements de score
+  // Écouter les changements sur tous les radio buttons
   const radioButtons = document.querySelectorAll('#evaluation-form input[type="radio"]');
   radioButtons.forEach(radio => {
     radio.addEventListener('change', updateEvaluationScore);
   });
-
-  renderEvaluationsHistory();
 }
 
-// Mettre à jour le score de l'évaluation
+// Mettre à jour le score en temps réel
 function updateEvaluationScore() {
   const criteria = [
     'ponctualite', 'communication', 'esprit', 'confiance', 'adaptabilite',
@@ -899,27 +951,28 @@ function updateEvaluationScore() {
   ];
 
   let totalScore = 0;
-  let allAnswered = true;
+  let answeredCount = 0;
 
   criteria.forEach(criterion => {
     const selectedRadio = document.querySelector(`input[name="${criterion}"]:checked`);
     if (selectedRadio) {
       totalScore += parseInt(selectedRadio.value);
-    } else {
-      allAnswered = false;
+      answeredCount++;
     }
   });
 
+  // Afficher le score
   const scoreDisplay = document.getElementById('eval-score-display');
-  const scoreValue = document.getElementById('eval-score-value');
+  const scoreValue = document.querySelector('.eval-score-value');
   const scoreInterpretation = document.getElementById('eval-score-interpretation');
-
-  if (allAnswered) {
+  
+  if (answeredCount > 0) {
     scoreValue.textContent = `${totalScore}/40`;
     
+    // Afficher l'interprétation selon le score
     let interpretation = '';
-    if (totalScore >= 36) {
-      interpretation = '🌟 Excellent ! Continue comme ça !';
+    if (totalScore >= 40) {
+      interpretation = '🌟 Tu es très solide, continue à cultiver tes forces.';
     } else if (totalScore >= 30) {
       interpretation = '👍 Bon niveau, quelques points à travailler pour progresser.';
     } else if (totalScore >= 20) {
