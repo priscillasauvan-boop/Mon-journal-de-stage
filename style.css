@@ -204,12 +204,52 @@ header h1 {
   color: var(--gray-900);
 }
 
+.date-selector-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.date-input {
+  padding: 8px 15px;
+  border: 2px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--white);
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: var(--pink-primary);
+  box-shadow: 0 0 0 3px var(--pink-pastel);
+}
+
 .date-display {
   background: linear-gradient(135deg, var(--yellow-light) 0%, var(--pink-pastel) 100%);
   padding: 8px 15px;
   border-radius: 8px;
   font-weight: 600;
   color: var(--gray-900);
+  font-size: 0.95rem;
+}
+
+.stage-auto-detect {
+  background: linear-gradient(135deg, var(--yellow-light) 0%, var(--pink-pastel) 100%);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.stage-auto-detect .stage-emoji {
+  font-size: 1.5rem;
+  margin-right: 8px;
 }
 
 .mood-selector {
