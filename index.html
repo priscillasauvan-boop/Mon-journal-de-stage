@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Journal de Stage</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📔 Mon Journal de Stage</h1>
+      <p class="subtitle">Suivez vos stages et votre humeur au quotidien</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="stages">📚 Mes Stages</button>
+      <button class="tab" data-tab="journal">✏️ Journal</button>
+      <button class="tab" data-tab="stats">😉 Statistiques</button>
+    </nav>
+
+    <div id="stages-view" class="view active">
+      <div class="modality-selector">
+        <select id="modality-select">
+          <option value="">Toutes les modalités</option>
+          <option value="nucleaire">☢️ Médecine Nucléaire</option>
+          <option value="radiotherapie">💥 Radiothérapie</option>
+          <option value="scanner">🌀 Scanner</option>
+          <option value="irm">🧲 IRM</option>
+          <option value="conventionnelle">🩻 Conventionnelle</option>
+          <option value="interventionnelle">🫀 Interventionnelle</option>
+          <option value="echographie">🦇 Échographie</option>
+        </select>
+      </div>
+
+      <div id="stages-list" class="stages-grid"></div>
+    </div>
+
+    <div id="journal-view" class="view">
+      <div class="journal-header">
+        <h2>Ajouter une note</h2>
+        <div class="date-display">{today}</div>
+      </div>
+
+      <div class="mood-selector">
+        <p>Comment était ta journée ?</p>
+        <div class="mood-buttons">
+          <button class="mood-btn" data-mood="excellent">😊<span>Excellent</span></button>
+          <button class="mood-btn" data-mood="bien">🙂<span>Bien</span></button>
+          <button class="mood-btn" data-mood="moyen">😐<span>Moyen</span></button>
+          <button class="mood-btn" data-mood="difficile">😕<span>Difficile</span></button>
+          <button class="mood-btn" data-mood="penible">😞<span>Pénible</span></button>
+        </div>
+      </div>
+
+      <div class="stage-selector">
+        <label for="stage-select">Stage concerné :</label>
+        <select id="stage-select"></select>
+      </div>
+
+      <div class="note-editor">
+        <textarea id="note-content" placeholder="Qu'as-tu fait aujourd'hui ? Qu'as-tu appris ?" rows="8"></textarea>
+        <button id="save-note" class="btn-primary">💾 Enregistrer la note</button>
+      </div>
+
+      <div class="recent-notes">
+        <h3>📝 Notes récentes</h3>
+        <div id="notes-list"></div>
+      </div>
+    </div>
+
+    <div id="stats-view" class="view">
+      <h2>😉 Statistiques de l'humeur en stage</h2>
+      <div id="stats-container"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
