@@ -85,10 +85,78 @@ function initMoodSelector() {
 
 // Affichage de la date
 function initDateDisplay() {
-  const dateDisplay = document.querySelector('.date-display');
+  const dateInput = document.getElementById('selected-date');
+  const dateDisplayText = document.getElementById('date-display-text');
   const today = new Date();
+  
+  // Initialiser avec la date du jour
+  const todayString = today.toISOString().split('T')[0];
+  dateInput.value = todayString;
+  
+  // Afficher la date en français
+  updateDateDisplay(today);
+  
+  // Détecter le stage automatiquement
+  detectStageForDate(todayString);
+  
+  // Écouter les changements de date
+  dateInput.addEventListener('change', () => {
+    const selectedDate = new Date(dateInput.value + 'T00:00:00');
+    updateDateDisplay(selectedDate);
+    detectStageForDate(dateInput.value);
+  });
+}
+
+// Mettre à jour l'affichage de la date en français
+function updateDateDisplay(date) {
+  const dateDisplayText = document.getElementById('date-display-text');
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  dateDisplay.textContent = today.toLocaleDateString('fr-FR', options);
+  dateDisplayText.textContent = date.toLocaleDateString('fr-FR', options);
+}
+
+// Détecter automatiquement le stage correspondant à une date
+function detectStageForDate(dateString) {
+  const autoDetectDiv = document.getElementById('stage-auto-detect');
+  const stageSelect = document.getElementById('stage-select');
+  
+  if (!dateString) {
+    autoDetectDiv.style.display = 'none';
+    return;
+  }
+  
+  // Trouver le stage qui correspond à cette date
+  const matchingStage = stages.find(stage => {
+    return dateString >= stage.dateDebut && dateString <= stage.dateFin;
+  });
+  
+  if (matchingStage) {
+    // Afficher le message de détection automatique
+    autoDetectDiv.innerHTML = `
+      <span class="stage-emoji">${matchingStage.emoji}</span>
+      Stage détecté : <strong>${matchingStage.name}</strong>
+      <br>
+      <span style="font-size: 0.85rem; font-weight: normal;">
+        Du ${formatDate(matchingStage.dateDebut)} au ${formatDate(matchingStage.dateFin)}
+      </span>
+    `;
+    autoDetectDiv.style.display = 'block';
+    
+    // Pré-sélectionner le stage dans le menu déroulant
+    stageSelect.value = matchingStage.id;
+  } else {
+    // Aucun stage trouvé pour cette date
+    autoDetectDiv.innerHTML = `
+      ⚠️ Aucun stage trouvé pour cette date
+      <br>
+      <span style="font-size: 0.85rem; font-weight: normal;">
+        Choisis un stage manuellement ou crée-en un nouveau
+      </span>
+    `;
+    autoDetectDiv.style.display = 'block';
+    
+    // Réinitialiser la sélection
+    stageSelect.value = '';
+  }
 }
 
 // Sélecteur de stage
@@ -156,6 +224,7 @@ function renderStages() {
 function saveNote() {
   const stageId = document.getElementById('stage-select').value;
   const content = document.getElementById('note-content').value.trim();
+  const selectedDate = document.getElementById('selected-date').value;
 
   if (!selectedMood) {
     showToast('Choisis une humeur d\'abord ! 😊');
@@ -172,11 +241,11 @@ function saveNote() {
     return;
   }
 
-  // Créer la nouvelle note
+  // Créer la nouvelle note avec la date sélectionnée
   const newNote = {
     id: notes.length + 1,
     stageId: parseInt(stageId),
-    date: new Date().toISOString().split('T')[0],
+    date: selectedDate, // Utiliser la date sélectionnée au lieu de la date du jour
     mood: selectedMood,
     content: content
   };
