@@ -1,8 +1,86 @@
 // État de l'application
 let currentTab = 'stages';
 let selectedMood = null;
-let stages = [...DEMO_STAGES];
-let notes = [...DEMO_NOTES];
+let stages = [];
+let notes = [];
+let evaluations = [];
+
+// Charger les données depuis l'API
+async function loadStages() {
+  try {
+    const response = await fetch('/api/stages');
+    const data = await response.json();
+    
+    const MODALITY_NAMES = {
+      nucleaire: 'Médecine Nucléaire',
+      radiotherapie: 'Radiothérapie',
+      scanner: 'Scanner',
+      irm: 'IRM',
+      conventionnelle: 'Conventionnelle',
+      interventionnelle: 'Interventionnelle',
+      echographie: 'Échographie'
+    };
+    
+    stages = data.map(stage => ({
+      id: stage.id,
+      name: stage.name || stage.lieu,
+      modality: stage.modality,
+      modalityName: MODALITY_NAMES[stage.modality],
+      emoji: stage.emoji,
+      lieu: stage.lieu,
+      tuteur: stage.tuteur,
+      cadre: stage.cadre,
+      dateDebut: stage.date_debut,
+      dateFin: stage.date_fin,
+      joursTravailles: stage.jours_travailles
+    }));
+  } catch (error) {
+    console.error('Erreur chargement stages:', error);
+    stages = [];
+  }
+}
+
+async function loadNotes() {
+  try {
+    const response = await fetch('/api/notes');
+    const data = await response.json();
+    notes = data.map(note => ({
+      ...note,
+      stageId: note.stage_id,
+      content: note.actes || note.reflexions || note.apprentissages || note.note || ''
+    }));
+  } catch (error) {
+    console.error('Erreur chargement notes:', error);
+    notes = [];
+  }
+}
+
+async function loadEvaluations() {
+  try {
+    const response = await fetch('/api/evaluations');
+    const data = await response.json();
+    evaluations = data.map(ev => ({
+      ...ev,
+      stageId: ev.stage_id,
+      scores: {
+        ponctualite: ev.ponctualite,
+        communication: ev.communication,
+        esprit: ev.esprit,
+        confiance: ev.confiance,
+        adaptabilite: ev.adaptabilite,
+        protocoles: ev.protocoles,
+        gestes: ev.gestes,
+        materiel: ev.materiel,
+        organisation: ev.organisation,
+        patient: ev.patient
+      },
+      totalScore: ev.total_score
+    }));
+  } catch (error) {
+    console.error('Erreur chargement evaluations:', error);
+    evaluations = [];
+  }
+}
 
 // Emojis pour les humeurs
 const MOOD_EMOJIS = {
@@ -22,18 +100,25 @@ const MOOD_LABELS = {
 };
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initMoodSelector();
   initDateDisplay();
+  
+  await loadStages();
+  await loadNotes();
+  await loadEvaluations();
+  
   initStageSelector();
   initModalityFilter();
+  initEvaluationForm();
   renderStages();
   renderNotes();
   renderStats();
 
   // Bouton sauvegarder
   document.getElementById('save-note').addEventListener('click', saveNote);
+  document.getElementById('save-evaluation').addEventListener('click', saveEvaluation);
 });
 
 // Gestion des onglets
@@ -220,10 +305,12 @@ function renderStages() {
   `).join('');
 }
 
-// Sauvegarder une note
-function saveNote() {
+// Sauve garder une note
+async function saveNote() {
   const stageId = document.getElementById('stage-select').value;
-  const content = document.getElementById('note-content').value.trim();
+  const actes = document.getElementById('note-actes')?.value?.trim() || '';
+  const reflexions = document.getElementById('note-reflexions')?.value?.trim() || '';
+  const apprentissages = document.getElementById('note-apprentissages')?.value?.trim() || '';
   const selectedDate = document.getElementById('selected-date').value;
 
   if (!selectedMood) {
@@ -236,35 +323,49 @@ function saveNote() {
     return;
   }
 
-  if (!content) {
-    showToast('Écris quelque chose dans la note ! ✏️');
+  if (!actes && !reflexions && !apprentissages) {
+    showToast('Écris au moins quelque chose ! ✏️');
     return;
   }
 
-  // Créer la nouvelle note avec la date sélectionnée
-  const newNote = {
-    id: notes.length + 1,
-    stageId: parseInt(stageId),
-    date: selectedDate, // Utiliser la date sélectionnée au lieu de la date du jour
-    mood: selectedMood,
-    content: content
-  };
+  try {
+    const response = await fetch('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stage_id: parseInt(stageId),
+        date: selectedDate,
+        mood: selectedMood,
+        actes: actes,
+        reflexions: reflexions,
+        apprentissages: apprentissages
+      })
+    });
 
-  notes.unshift(newNote);
+    if (!response.ok) throw new Error('Erreur sauvegarde note');
 
-  // Réinitialiser le formulaire
-  document.getElementById('note-content').value = '';
-  document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
-  selectedMood = null;
+    // Recharger les notes
+    await loadNotes();
 
-  // Rafraîchir l'affichage
-  renderNotes();
-  renderStats();
+    // Réinitialiser le formulaire
+    if (document.getElementById('note-actes')) document.getElementById('note-actes').value = '';
+    if (document.getElementById('note-reflexions')) document.getElementById('note-reflexions').value = '';
+    if (document.getElementById('note-apprentissages')) document.getElementById('note-apprentissages').value = '';
+    document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
+    selectedMood = null;
 
-  showToast('Note enregistrée ! 💾');
+    // Rafraîchir l'affichage
+    renderNotes();
+    renderStats();
+
+    showToast('Note enregistrée ! 💾');
+  } catch (error) {
+    console.error('Erreur sauvegarde note:', error);
+    showToast('Erreur lors de la sauvegarde ❌');
+  }
 }
 
-// Rendu des notes
+// Rendu des notes (groupées par stage)
 function renderNotes() {
   const container = document.getElementById('notes-list');
   
@@ -279,439 +380,59 @@ function renderNotes() {
     return;
   }
 
-  const recentNotes = notes.slice(0, 10);
-
-  container.innerHTML = recentNotes.map(note => {
-    const stage = stages.find(s => s.id === note.stageId);
-    return `
-      <div class="note-card">
-        <div class="note-header">
-          <span class="note-date">${formatDate(note.date)}</span>
-          <span class="note-mood">${MOOD_EMOJIS[note.mood]}</span>
-        </div>
-        <div class="note-stage">${stage ? `${stage.emoji} ${stage.name}` : 'Stage inconnu'}</div>
-        <div class="note-content">${note.content}</div>
-        <div class="note-actions">
-          <button class="btn-delete" onclick="deleteNote(${note.id})">🗑️ Supprimer</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// Supprimer une note
-function deleteNote(noteId) {
-  if (confirm('Supprimer cette note ?')) {
-    notes = notes.filter(n => n.id !== noteId);
-    renderNotes();
-    renderStats();
-    showToast('Note supprimée ! 🗑️');
-  }
-}
-
-// Rendu des statistiques
-function renderStats() {
-  const container = document.getElementById('stats-container');
+  const today = new Date().toISOString().split('T')[0];
   
-  if (notes.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">📊</div>
-        <div class="empty-state-text">Pas encore de statistiques</div>
-        <div class="empty-state-hint">Ajoute des notes pour voir tes stats d'humeur !</div>
-      </div>
-    `;
-    return;
-  }
-
-  // Calculer les stats globales
-  const moodStats = calculateMoodStats();
-  const total = Object.values(moodStats).reduce((sum, count) => sum + count, 0);
-
-  // Calculer les stats par stage
-  const stageStats = {};
-  stages.forEach(stage => {
-    const stageNotes = notes.filter(n => n.stageId === stage.id);
-    if (stageNotes.length > 0) {
-      // Calculer la durée du stage en jours
-      const dateDebut = new Date(stage.dateDebut);
-      const dateFin = new Date(stage.dateFin);
-      const diffTime = Math.abs(dateFin - dateDebut);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      stageStats[stage.id] = {
-        stage: stage,
-        notes: stageNotes,
-        totalDays: diffDays,
-        moodCounts: {
-          excellent: stageNotes.filter(n => n.mood === 'excellent').length,
-          bien: stageNotes.filter(n => n.mood === 'bien').length,
-          moyen: stageNotes.filter(n => n.mood === 'moyen').length,
-          difficile: stageNotes.filter(n => n.mood === 'difficile').length,
-          penible: stageNotes.filter(n => n.mood === 'penible').length
-        }
-      };
-    }
-  });
-
-  // Rendu global
-  let html = `
-    <div class="stats-card">
-      <h3>😉 Vue globale</h3>
-      ${renderMoodBars(moodStats, total)}
-      <div class="stats-summary">
-        <div class="stats-summary-value">${total}</div>
-        <div class="stats-summary-label">notes au total</div>
-      </div>
-    </div>
-  `;
-
-  // Rendu par stage
-  Object.values(stageStats).forEach(stageStat => {
-    const stageTotal = Object.values(stageStat.moodCounts).reduce((sum, count) => sum + count, 0);
-    html += `
-      <div class="stats-card">
-        <h3>${stageStat.stage.emoji} ${stageStat.stage.name}</h3>
-        ${renderMoodBars(stageStat.moodCounts, stageTotal)}
-        <div class="stats-summary">
-          <div class="stats-summary-value">${stageTotal} / ${stageStat.totalDays}</div>
-          <div class="stats-summary-label">jours notés sur ${stageStat.totalDays} jours de stage</div>
-        </div>
-      </div>
-    `;
-  });
-
-  container.innerHTML = html;
-}
-
-// Rendu des barres d'humeur
-function renderMoodBars(moodCounts, total) {
-  const moods = ['excellent', 'bien', 'moyen', 'difficile', 'penible'];
-  
-  return moods.map(mood => {
-    const count = moodCounts[mood] || 0;
-    const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-    
-    return `
-      <div class="mood-stat">
-        <div class="mood-stat-header">
-          <div class="mood-stat-label">
-            <span class="mood-stat-emoji">${MOOD_EMOJIS[mood]}</span>
-            <span>${MOOD_LABELS[mood]}</span>
-          </div>
-          <div class="mood-stat-value">${percentage}% (${count})</div>
-        </div>
-        <div class="mood-stat-bar">
-          <div class="mood-stat-fill ${mood}" style="width: ${percentage}%"></div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// Toast notification
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.classList.add('show');
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3000);
-}
-
-// Formater une date
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-// Calculer les stats d'humeur
-function calculateMoodStats() {
-  const stats = {
-    excellent: 0,
-    bien: 0,
-    moyen: 0,
-    difficile: 0,
-    penible: 0
-  };
-
+  // Grouper les notes par stage
+  const notesByStage = {};
   notes.forEach(note => {
-    if (stats[note.mood] !== undefined) {
-      stats[note.mood]++;
+    if (!notesByStage[note.stageId]) {
+      notesByStage[note.stageId] = [];
     }
+    notesByStage[note.stageId].push(note);
   });
 
-  return stats;
-}
+  let html = '';
 
-// Modifier un stage
-function editStage(stageId) {
-  const stage = stages.find(s => s.id === stageId);
-  if (!stage) return;
+  // Pour chaque stage ayant des notes
+  Object.keys(notesByStage).forEach(stageId => {
+    const stage = stages.find(s => s.id === parseInt(stageId));
+    if (!stage) return;
 
-  // Créer un modal simple pour éditer
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `
-    <div class="modal">
-      <h2>✏️ Modifier le stage</h2>
-      <form id="edit-stage-form" onsubmit="return false;">
-        <div class="form-group">
-          <label>Nom du stage</label>
-          <input type="text" id="edit-name" value="${stage.name}" required>
-        </div>
-        <div class="form-group">
-          <label>Date de début</label>
-          <input type="date" id="edit-debut" value="${stage.dateDebut}" required>
-        </div>
-        <div class="form-group">
-          <label>Date de fin</label>
-          <input type="date" id="edit-fin" value="${stage.dateFin}" required>
-        </div>
-        <div class="form-group">
-          <label>Tuteur</label>
-          <input type="text" id="edit-tuteur" value="${stage.tuteur}">
-        </div>
-        <div class="form-group">
-          <label>Cadre</label>
-          <input type="text" id="edit-cadre" value="${stage.cadre}">
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
-          <button type="button" class="btn-primary" onclick="saveStageEdit(${stageId})">💾 Enregistrer</button>
-        </div>
-      </form>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  setTimeout(() => modal.classList.add('show'), 10);
-}
+    const stageNotes = notesByStage[stageId];
+    const isFinished = stage.dateFin < today;
 
-// Sauvegarder les modifications du stage
-function saveStageEdit(stageId) {
-  const stage = stages.find(s => s.id === stageId);
-  if (!stage) return;
-
-  stage.name = document.getElementById('edit-name').value;
-  stage.dateDebut = document.getElementById('edit-debut').value;
-  stage.dateFin = document.getElementById('edit-fin').value;
-  stage.tuteur = document.getElementById('edit-tuteur').value;
-  stage.cadre = document.getElementById('edit-cadre').value;
-
-  closeModal();
-  renderStages();
-  renderStats();
-  showToast('Stage modifié ! ✏️');
-}
-
-// Fermer le modal
-function closeModal() {
-  const modal = document.querySelector('.modal-overlay');
-  if (modal) {
-    modal.classList.remove('show');
-    setTimeout(() => modal.remove(), 300);
-  }
-}
-
-// Supprimer un stage
-function deleteStage(stageId) {
-  const stage = stages.find(s => s.id === stageId);
-  if (!stage) return;
-
-  if (confirm(`Supprimer le stage "${stage.name}" ?\n\nToutes les notes associées seront aussi supprimées.`)) {
-    // Supprimer le stage
-    stages = stages.filter(s => s.id !== stageId);
-    
-    // Supprimer les notes associées
-    notes = notes.filter(n => n.stageId !== stageId);
-    
-    renderStages();
-    renderNotes();
-    renderStats();
-    initStageSelector();
-    showToast('Stage supprimé ! 🗑️');
-  }
-}
-
-// Jours fériés français 2025
-const JOURS_FERIES_2025 = [
-  '2025-01-01', // Jour de l'an
-  '2025-04-21', // Lundi de Pâques
-  '2025-05-01', // Fête du travail
-  '2025-05-08', // Victoire 1945
-  '2025-05-29', // Ascension
-  '2025-06-09', // Lundi de Pentecôte
-  '2025-07-14', // Fête nationale
-  '2025-08-15', // Assomption
-  '2025-11-01', // Toussaint
-  '2025-11-11', // Armistice 1918
-  '2025-12-25'  // Noël
-];
-
-// Calculer les jours ouvrés (sans samedi, dimanche et jours fériés)
-function calculateWorkingDays(dateDebut, dateFin) {
-  if (!dateDebut || !dateFin) return 0;
-  
-  const debut = new Date(dateDebut);
-  const fin = new Date(dateFin);
-  
-  if (debut > fin) return 0;
-  
-  let workingDays = 0;
-  let currentDate = new Date(debut);
-  
-  while (currentDate <= fin) {
-    const dayOfWeek = currentDate.getDay();
-    const dateString = currentDate.toISOString().split('T')[0];
-    
-    // Exclure samedi (6) et dimanche (0), et les jours fériés
-    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !JOURS_FERIES_2025.includes(dateString)) {
-      workingDays++;
-    }
-    
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  
-  return workingDays;
-}
-
-// Ouvrir le modal de création de stage
-function openNewStageModal() {
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.id = 'new-stage-modal';
-  modal.innerHTML = `
-    <div class="modal">
-      <h2>➕ Nouveau Stage</h2>
-      <form id="new-stage-form" onsubmit="return false;">
-        <div class="form-group">
-          <label>Modalité *</label>
-          <select id="new-modality" required>
-            <option value="">Choisis une modalité</option>
-            <option value="nucleaire">☢️ Médecine Nucléaire</option>
-            <option value="radiotherapie">💥 Radiothérapie</option>
-            <option value="scanner">🌀 Scanner</option>
-            <option value="irm">🧲 IRM</option>
-            <option value="conventionnelle">🩻 Conventionnelle</option>
-            <option value="interventionnelle">🫀 Interventionnelle</option>
-            <option value="echographie">🦇 Échographie</option>
-          </select>
+    if (isFinished) {
+      // Stage terminé : version compacte/collapsible
+      html += `
+        <div class="stage-notes-group finished">
+          <div class="stage-notes-header" onclick="toggleStageNotes(${stageId})">
+            <div class="stage-notes-title">
+              <span class="stage-emoji">${stage.emoji}</span>
+              <span class="stage-name-compact">${stage.name}</span>
+              <span class="notes-count">${stageNotes.length} note${stageNotes.length > 1 ? 's' : ''}</span>
+            </div>
+            <span class="toggle-icon" id="toggle-${stageId}">▼</span>
+          </div>
+          <div class="stage-notes-content" id="notes-${stageId}" style="display: none;">
+            ${stageNotes.map(note => `
+              <div class="note-card-compact">
+                <div class="note-header">
+                  <span class="note-date">${formatDate(note.date)}</span>
+                  <span class="note-mood">${MOOD_EMOJIS[note.mood]}</span>
+                </div>
+                <div class="note-content">${note.content}</div>
+                <div class="note-actions">
+                  <button class="btn-delete" onclick="deleteNote(${note.id})">🗑️ Supprimer</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-        <div class="form-group">
-          <label>Lieu du stage *</label>
-          <input type="text" id="new-lieu" placeholder="Ex: CHU Bordeaux" required>
-        </div>
-        <div class="form-group">
-          <label>Nom du cadre</label>
-          <input type="text" id="new-cadre" placeholder="Ex: Mme Dubois">
-        </div>
-        <div class="form-group">
-          <label>Nom du tuteur</label>
-          <input type="text" id="new-tuteur" placeholder="Ex: Dr Martin">
-        </div>
-        <div class="form-group">
-          <label>Date de début *</label>
-          <input type="date" id="new-debut" required>
-        </div>
-        <div class="form-group">
-          <label>Date de fin *</label>
-          <input type="date" id="new-fin" required>
-        </div>
-        <div id="workdays-info" class="workdays-display" style="display: none;">
-          <span class="days-count">0</span> jours ouvrés<br>
-          <span style="font-size: 0.9rem; font-weight: normal;">(sans weekends ni jours fériés)</span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
-          <button type="button" class="btn-primary" onclick="createNewStage()">➕ Créer le stage</button>
-        </div>
-      </form>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  setTimeout(() => modal.classList.add('show'), 10);
-  
-  // Écouter les changements de dates
-  const debutInput = document.getElementById('new-debut');
-  const finInput = document.getElementById('new-fin');
-  
-  const updateWorkdays = () => {
-    const debut = debutInput.value;
-    const fin = finInput.value;
-    
-    if (debut && fin) {
-      const workdays = calculateWorkingDays(debut, fin);
-      const display = document.getElementById('workdays-info');
-      display.style.display = 'block';
-      display.querySelector('.days-count').textContent = workdays;
-    }
-  };
-  
-  debutInput.addEventListener('change', updateWorkdays);
-  finInput.addEventListener('change', updateWorkdays);
-}
-
-// Créer un nouveau stage
-function createNewStage() {
-  const modality = document.getElementById('new-modality').value;
-  const lieu = document.getElementById('new-lieu').value.trim();
-  const cadre = document.getElementById('new-cadre').value.trim();
-  const tuteur = document.getElementById('new-tuteur').value.trim();
-  const debut = document.getElementById('new-debut').value;
-  const fin = document.getElementById('new-fin').value;
-  
-  if (!modality || !lieu || !debut || !fin) {
-    showToast('Remplis tous les champs obligatoires ! 📝');
-    return;
-  }
-  
-  if (new Date(debut) > new Date(fin)) {
-    showToast('La date de fin doit être après la date de début ! 📅');
-    return;
-  }
-  
-  // Trouver l'emoji et le nom de la modalité
-  const MODALITY_INFO = {
-    nucleaire: { emoji: '☢️', name: 'Médecine Nucléaire' },
-    radiotherapie: { emoji: '💥', name: 'Radiothérapie' },
-    scanner: { emoji: '🌀', name: 'Scanner' },
-    irm: { emoji: '🧲', name: 'IRM' },
-    conventionnelle: { emoji: '🩻', name: 'Conventionnelle' },
-    interventionnelle: { emoji: '🫀', name: 'Interventionnelle' },
-    echographie: { emoji: '🦇', name: 'Échographie' }
-  };
-  
-  const info = MODALITY_INFO[modality];
-  
-  // Créer le nouveau stage
-  const newStage = {
-    id: stages.length > 0 ? Math.max(...stages.map(s => s.id)) + 1 : 1,
-    modality: modality,
-    emoji: info.emoji,
-    name: lieu,
-    modalityName: info.name,
-    dateDebut: debut,
-    dateFin: fin,
-    tuteur: tuteur || 'Non renseigné',
-    cadre: cadre || 'Non renseigné'
-  };
-  
-  stages.push(newStage);
-  
-  closeModal();
-  renderStages();
-  initStageSelector();
-  showToast(`Stage "${lieu}" créé ! 🎉`);
-}
-
-// Exposer les fonctions globalement
-window.deleteNote = deleteNote;
-window.editStage = editStage;
-window.saveStageEdit = saveStageEdit;
-window.closeModal = closeModal;
-window.deleteStage = deleteStage;
-window.openNewStageModal = openNewStageModal;
-window.createNewStage = createNewStage;
+      `;
+    } else {
+      // Stage en cours : affichage normal
+      html += `
+        <div class="stage-notes-group active">
+          <div class="stage-notes-header-active">
+            <span class="stage-emoji">${stage.emoji}</span>
+            <span>${
