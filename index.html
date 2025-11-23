@@ -42,8 +42,12 @@
     <div id="journal-view" class="view">
       <div class="journal-header">
         <h2>Ajouter une note</h2>
-        <div class="date-display">{today}</div>
+        <div class="date-selector-wrapper">
+          <input type="date" id="selected-date" class="date-input">
+          <div class="date-display" id="date-display-text">{today}</div>
+        </div>
       </div>
+      <div id="stage-auto-detect" class="stage-auto-detect" style="display: none;"></div>
 
       <div class="mood-selector">
         <p>Comment était ta journée ?</p>
