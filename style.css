@@ -111,8 +111,15 @@ header h1 {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.modality-selector {
+.stages-header {
+  display: flex;
+  gap: 15px;
+  align-items: center;
   margin-bottom: 30px;
+}
+
+.modality-selector {
+  flex: 1;
 }
 
 .modality-selector select,
@@ -311,6 +318,25 @@ header h1 {
 }
 
 .btn-primary:hover {
+  background: linear-gradient(135deg, var(--yellow-dark) 0%, var(--pink-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px var(--shadow-pink);
+}
+
+.btn-add-stage {
+  padding: 12px 25px;
+  background: linear-gradient(135deg, var(--yellow-primary) 0%, var(--pink-primary) 100%);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-add-stage:hover {
   background: linear-gradient(135deg, var(--yellow-dark) 0%, var(--pink-primary) 100%);
   transform: translateY(-2px);
   box-shadow: 0 5px 20px var(--shadow-pink);
@@ -622,10 +648,39 @@ header h1 {
   transition: all 0.3s ease;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: var(--pink-primary);
   box-shadow: 0 0 0 3px var(--pink-pastel);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--gray-300);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background: var(--white);
+  cursor: pointer;
+}
+
+.workdays-display {
+  background: linear-gradient(135deg, var(--yellow-light) 0%, var(--pink-pastel) 100%);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  margin-top: 15px;
+  font-weight: 600;
+  color: var(--gray-900);
+  font-size: 1.1rem;
+}
+
+.workdays-display .days-count {
+  font-size: 1.5rem;
+  color: var(--pink-primary);
 }
 
 .modal-actions {
