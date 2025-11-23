@@ -466,9 +466,183 @@ function deleteStage(stageId) {
   }
 }
 
+// Jours fériés français 2025
+const JOURS_FERIES_2025 = [
+  '2025-01-01', // Jour de l'an
+  '2025-04-21', // Lundi de Pâques
+  '2025-05-01', // Fête du travail
+  '2025-05-08', // Victoire 1945
+  '2025-05-29', // Ascension
+  '2025-06-09', // Lundi de Pentecôte
+  '2025-07-14', // Fête nationale
+  '2025-08-15', // Assomption
+  '2025-11-01', // Toussaint
+  '2025-11-11', // Armistice 1918
+  '2025-12-25'  // Noël
+];
+
+// Calculer les jours ouvrés (sans samedi, dimanche et jours fériés)
+function calculateWorkingDays(dateDebut, dateFin) {
+  if (!dateDebut || !dateFin) return 0;
+  
+  const debut = new Date(dateDebut);
+  const fin = new Date(dateFin);
+  
+  if (debut > fin) return 0;
+  
+  let workingDays = 0;
+  let currentDate = new Date(debut);
+  
+  while (currentDate <= fin) {
+    const dayOfWeek = currentDate.getDay();
+    const dateString = currentDate.toISOString().split('T')[0];
+    
+    // Exclure samedi (6) et dimanche (0), et les jours fériés
+    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !JOURS_FERIES_2025.includes(dateString)) {
+      workingDays++;
+    }
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return workingDays;
+}
+
+// Ouvrir le modal de création de stage
+function openNewStageModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'new-stage-modal';
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>➕ Nouveau Stage</h2>
+      <form id="new-stage-form" onsubmit="return false;">
+        <div class="form-group">
+          <label>Modalité *</label>
+          <select id="new-modality" required>
+            <option value="">Choisis une modalité</option>
+            <option value="nucleaire">☢️ Médecine Nucléaire</option>
+            <option value="radiotherapie">💥 Radiothérapie</option>
+            <option value="scanner">🌀 Scanner</option>
+            <option value="irm">🧲 IRM</option>
+            <option value="conventionnelle">🩻 Conventionnelle</option>
+            <option value="interventionnelle">🫀 Interventionnelle</option>
+            <option value="echographie">🦇 Échographie</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lieu du stage *</label>
+          <input type="text" id="new-lieu" placeholder="Ex: CHU Bordeaux" required>
+        </div>
+        <div class="form-group">
+          <label>Nom du cadre</label>
+          <input type="text" id="new-cadre" placeholder="Ex: Mme Dubois">
+        </div>
+        <div class="form-group">
+          <label>Nom du tuteur</label>
+          <input type="text" id="new-tuteur" placeholder="Ex: Dr Martin">
+        </div>
+        <div class="form-group">
+          <label>Date de début *</label>
+          <input type="date" id="new-debut" required>
+        </div>
+        <div class="form-group">
+          <label>Date de fin *</label>
+          <input type="date" id="new-fin" required>
+        </div>
+        <div id="workdays-info" class="workdays-display" style="display: none;">
+          <span class="days-count">0</span> jours ouvrés<br>
+          <span style="font-size: 0.9rem; font-weight: normal;">(sans weekends ni jours fériés)</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+          <button type="button" class="btn-primary" onclick="createNewStage()">➕ Créer le stage</button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Écouter les changements de dates
+  const debutInput = document.getElementById('new-debut');
+  const finInput = document.getElementById('new-fin');
+  
+  const updateWorkdays = () => {
+    const debut = debutInput.value;
+    const fin = finInput.value;
+    
+    if (debut && fin) {
+      const workdays = calculateWorkingDays(debut, fin);
+      const display = document.getElementById('workdays-info');
+      display.style.display = 'block';
+      display.querySelector('.days-count').textContent = workdays;
+    }
+  };
+  
+  debutInput.addEventListener('change', updateWorkdays);
+  finInput.addEventListener('change', updateWorkdays);
+}
+
+// Créer un nouveau stage
+function createNewStage() {
+  const modality = document.getElementById('new-modality').value;
+  const lieu = document.getElementById('new-lieu').value.trim();
+  const cadre = document.getElementById('new-cadre').value.trim();
+  const tuteur = document.getElementById('new-tuteur').value.trim();
+  const debut = document.getElementById('new-debut').value;
+  const fin = document.getElementById('new-fin').value;
+  
+  if (!modality || !lieu || !debut || !fin) {
+    showToast('Remplis tous les champs obligatoires ! 📝');
+    return;
+  }
+  
+  if (new Date(debut) > new Date(fin)) {
+    showToast('La date de fin doit être après la date de début ! 📅');
+    return;
+  }
+  
+  // Trouver l'emoji et le nom de la modalité
+  const MODALITY_INFO = {
+    nucleaire: { emoji: '☢️', name: 'Médecine Nucléaire' },
+    radiotherapie: { emoji: '💥', name: 'Radiothérapie' },
+    scanner: { emoji: '🌀', name: 'Scanner' },
+    irm: { emoji: '🧲', name: 'IRM' },
+    conventionnelle: { emoji: '🩻', name: 'Conventionnelle' },
+    interventionnelle: { emoji: '🫀', name: 'Interventionnelle' },
+    echographie: { emoji: '🦇', name: 'Échographie' }
+  };
+  
+  const info = MODALITY_INFO[modality];
+  
+  // Créer le nouveau stage
+  const newStage = {
+    id: stages.length > 0 ? Math.max(...stages.map(s => s.id)) + 1 : 1,
+    modality: modality,
+    emoji: info.emoji,
+    name: lieu,
+    modalityName: info.name,
+    dateDebut: debut,
+    dateFin: fin,
+    tuteur: tuteur || 'Non renseigné',
+    cadre: cadre || 'Non renseigné'
+  };
+  
+  stages.push(newStage);
+  
+  closeModal();
+  renderStages();
+  initStageSelector();
+  showToast(`Stage "${lieu}" créé ! 🎉`);
+}
+
 // Exposer les fonctions globalement
 window.deleteNote = deleteNote;
 window.editStage = editStage;
 window.saveStageEdit = saveStageEdit;
 window.closeModal = closeModal;
 window.deleteStage = deleteStage;
+window.openNewStageModal = openNewStageModal;
+window.createNewStage = createNewStage;
