@@ -20,17 +20,20 @@
     </nav>
 
     <div id="stages-view" class="view active">
-      <div class="modality-selector">
-        <select id="modality-select">
-          <option value="">Toutes les modalités</option>
-          <option value="nucleaire">☢️ Médecine Nucléaire</option>
-          <option value="radiotherapie">💥 Radiothérapie</option>
-          <option value="scanner">🌀 Scanner</option>
-          <option value="irm">🧲 IRM</option>
-          <option value="conventionnelle">🩻 Conventionnelle</option>
-          <option value="interventionnelle">🫀 Interventionnelle</option>
-          <option value="echographie">🦇 Échographie</option>
-        </select>
+      <div class="stages-header">
+        <div class="modality-selector">
+          <select id="modality-select">
+            <option value="">Toutes les modalités</option>
+            <option value="nucleaire">☢️ Médecine Nucléaire</option>
+            <option value="radiotherapie">💥 Radiothérapie</option>
+            <option value="scanner">🌀 Scanner</option>
+            <option value="irm">🧲 IRM</option>
+            <option value="conventionnelle">🩻 Conventionnelle</option>
+            <option value="interventionnelle">🫀 Interventionnelle</option>
+            <option value="echographie">🦇 Échographie</option>
+          </select>
+        </div>
+        <button class="btn-add-stage" onclick="openNewStageModal()">➕ Nouveau Stage</button>
       </div>
 
       <div id="stages-list" class="stages-grid"></div>
