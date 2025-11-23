@@ -80,9 +80,9 @@ app.post('/api/notes', async (req, res) => {
   try {
     const { stage_id, date, mood, note } = req.body;
     const result = await pool.query(
-      `INSERT INTO notes (stage_id, date, mood, content)
+      `INSERT INTO notes (stage_id, date, mood, note)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (stage_id, date) DO UPDATE SET mood=$3, content=$4
+       ON CONFLICT (stage_id, date) DO UPDATE SET mood=$3, note=$4
        RETURNING *`,
       [stage_id, date, mood, note]
     );
