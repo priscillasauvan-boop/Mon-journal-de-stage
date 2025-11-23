@@ -16,6 +16,7 @@
     <nav class="tabs">
       <button class="tab active" data-tab="stages">📚 Mes Stages</button>
       <button class="tab" data-tab="journal">✏️ Journal</button>
+      <button class="tab" data-tab="evaluation">📊 Auto-évaluation</button>
       <button class="tab" data-tab="stats">😉 Statistiques</button>
     </nav>
 
@@ -23,7 +24,7 @@
       <div class="stages-header">
         <div class="modality-selector">
           <select id="modality-select">
-            <option value="">Toutes les modalités</option>
+            <option value="">Modalité</option>
             <option value="nucleaire">☢️ Médecine Nucléaire</option>
             <option value="radiotherapie">💥 Radiothérapie</option>
             <option value="scanner">🌀 Scanner</option>
@@ -73,6 +74,435 @@
       <div class="recent-notes">
         <h3>📝 Notes récentes</h3>
         <div id="notes-list"></div>
+      </div>
+    </div>
+
+    <div id="evaluation-view" class="view">
+      <h2>📊 Grille d'auto-évaluation</h2>
+      <p class="evaluation-subtitle">Évalue ton expérience de stage</p>
+      
+      <div class="evaluation-stage-selector">
+        <label for="eval-stage-select">Stage à évaluer :</label>
+        <select id="eval-stage-select"></select>
+      </div>
+
+      <div id="evaluation-form" class="evaluation-form">
+        <h3 class="eval-section-title">🌱 1. Savoir-être (comment tu te sens dans l'équipe)</h3>
+        
+        <div class="eval-criterion">
+          <h3>Ponctualité</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="ponctualite" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">😁</div>
+                <div class="eval-label">Je suis toujours à l'heure</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="ponctualite" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">🙂</div>
+                <div class="eval-label">Presque toujours</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="ponctualite" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">😐</div>
+                <div class="eval-label">Parfois en retard</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="ponctualite" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😕</div>
+                <div class="eval-label">Souvent en retard</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Communication</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="communication" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">😁</div>
+                <div class="eval-label">Je parle clairement et j'écoute</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="communication" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">🙂</div>
+                <div class="eval-label">Je communique globalement bien</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="communication" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">😐</div>
+                <div class="eval-label">J'ai du mal à me faire comprendre</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="communication" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😕</div>
+                <div class="eval-label">Je n'ose pas ou je bloque</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Esprit d'équipe</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="esprit" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">😁</div>
+                <div class="eval-label">J'aide et je coopère</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="esprit" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">🙂</div>
+                <div class="eval-label">Je participe quand on me sollicite</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="esprit" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">😐</div>
+                <div class="eval-label">Je reste un peu en retrait</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="esprit" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😕</div>
+                <div class="eval-label">Je préfère rester seul</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Confiance / Autonomie</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="confiance" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">😁</div>
+                <div class="eval-label">Je prends des initiatives</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="confiance" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">🙂</div>
+                <div class="eval-label">J'essaie parfois</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="confiance" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">😐</div>
+                <div class="eval-label">J'attends souvent les consignes</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="confiance" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😕</div>
+                <div class="eval-label">Je n'ose pas du tout</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Adaptabilité</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="adaptabilite" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">😁</div>
+                <div class="eval-label">Je gère bien les imprévus</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="adaptabilite" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">🙂</div>
+                <div class="eval-label">Je m'adapte la plupart du temps</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="adaptabilite" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">😐</div>
+                <div class="eval-label">Je stresse facilement</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="adaptabilite" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😕</div>
+                <div class="eval-label">Je bloque face aux changements</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <h3 class="eval-section-title">💪 2. Savoir-faire (ce que tu sais faire dans le stage)</h3>
+
+        <div class="eval-criterion">
+          <h3>Application des protocoles</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="protocoles" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">💪</div>
+                <div class="eval-label">Je les respecte toujours</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="protocoles" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">👍</div>
+                <div class="eval-label">Presque toujours</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="protocoles" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">🤔</div>
+                <div class="eval-label">J'oublie parfois</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="protocoles" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😰</div>
+                <div class="eval-label">Je ne les applique pas bien</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Gestes techniques</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="gestes" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">💪</div>
+                <div class="eval-label">Je suis sûr de moi</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="gestes" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">👍</div>
+                <div class="eval-label">Globalement correct</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="gestes" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">🤔</div>
+                <div class="eval-label">Pas toujours précis</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="gestes" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😰</div>
+                <div class="eval-label">Je me trompe souvent</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Utilisation du matériel</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="materiel" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">💪</div>
+                <div class="eval-label">Je suis à l'aise</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="materiel" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">👍</div>
+                <div class="eval-label">Ça va</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="materiel" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">🤔</div>
+                <div class="eval-label">Je fais des maladresses</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="materiel" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😰</div>
+                <div class="eval-label">Je ne sais pas bien l'utiliser</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Organisation</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="organisation" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">💪</div>
+                <div class="eval-label">Je planifie bien</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="organisation" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">👍</div>
+                <div class="eval-label">Je m'organise globalement</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="organisation" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">🤔</div>
+                <div class="eval-label">Je m'éparpille parfois</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="organisation" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😰</div>
+                <div class="eval-label">Je suis désorganisé</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="eval-criterion">
+          <h3>Relation patient</h3>
+          <div class="eval-options">
+            <label class="eval-option">
+              <input type="radio" name="patient" value="4">
+              <div class="eval-card">
+                <div class="eval-emoji">💪</div>
+                <div class="eval-label">Je mets à l'aise et j'explique</div>
+                <div class="eval-points">4 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="patient" value="3">
+              <div class="eval-card">
+                <div class="eval-emoji">👍</div>
+                <div class="eval-label">Je suis correct</div>
+                <div class="eval-points">3 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="patient" value="2">
+              <div class="eval-card">
+                <div class="eval-emoji">🤔</div>
+                <div class="eval-label">Je suis un peu maladroit</div>
+                <div class="eval-points">2 pts</div>
+              </div>
+            </label>
+            <label class="eval-option">
+              <input type="radio" name="patient" value="1">
+              <div class="eval-card">
+                <div class="eval-emoji">😰</div>
+                <div class="eval-label">Je ne sais pas comment faire</div>
+                <div class="eval-points">1 pt</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="eval-score-display" class="eval-score-display" style="display: none;">
+          <div class="eval-score-value">0/40</div>
+          <div class="eval-score-label">Score total</div>
+          <div id="eval-score-interpretation" class="eval-score-interpretation"></div>
+        </div>
+
+        <button id="save-evaluation" class="btn-primary">💾 Enregistrer l'auto-évaluation</button>
+      </div>
+
+      <div class="score-interpretation-guide">
+        <h3>🎯 Interprétation du score</h3>
+        <div class="interpretation-item">
+          <div class="interpretation-range">40-48 pts</div>
+          <div class="interpretation-text">🌟 Tu es très solide, continue à cultiver tes forces.</div>
+        </div>
+        <div class="interpretation-item">
+          <div class="interpretation-range">30-39 pts</div>
+          <div class="interpretation-text">👍 Bon niveau, quelques points à travailler pour progresser.</div>
+        </div>
+        <div class="interpretation-item">
+          <div class="interpretation-range">20-29 pts</div>
+          <div class="interpretation-text">⚖️ Tu avances, mais il y a des axes clairs à améliorer.</div>
+        </div>
+        <div class="interpretation-item">
+          <div class="interpretation-range">&lt;20 pts</div>
+          <div class="interpretation-text">🚀 C'est une base de départ, concentre-toi sur 2-3 critères prioritaires.</div>
+        </div>
+      </div>
+
+      <div id="evaluations-history" class="evaluations-history">
+        <h3>📋 Historique des auto-évaluations</h3>
+        <div id="evaluations-list"></div>
       </div>
     </div>
 
