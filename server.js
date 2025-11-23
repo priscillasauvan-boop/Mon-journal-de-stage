@@ -78,10 +78,62 @@ app.get('/api/notes', async (req, res) => {
 
 app.post('/api/notes', async (req, res) => {
   try {
-    const { stage_id, date, mood, actes, reflexions, apprentissages } = req.body;
+    const { stage_id, date, mood, note } = req.body;
     const result = await pool.query(
-      `INSERT INTO notes (stage_id, date, mood, actes, reflexions, apprentissages)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (stage_id, date) DO UPDATE SET mood=$3, actes=$4, reflexions=$5, apprentissages=$6
+      `INSERT INTO notes (stage_id, date, mood, content)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (stage_id, date) DO UPDATE SET mood=$3, content=$4
        RETURNING *`,
-      [stage_id, date, mood,
+      [stage_id, date, mood, note]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erreur POST note:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/notes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM notes WHERE id=$1', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur DELETE note:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/evaluations', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM evaluations ORDER BY date DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erreur GET evaluations:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/evaluations', async (req, res) => {
+  try {
+    const { stage_id, date, ponctualite, communication, esprit, confiance, adaptabilite, protocoles, gestes, materiel, organisation, patient, total_score } = req.body;
+    const result = await pool.query(
+      `INSERT INTO evaluations (stage_id, date, ponctualite, communication, esprit, confiance, adaptabilite, protocoles, gestes, materiel, organisation, patient, total_score)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+      [stage_id, date, ponctualite, communication, esprit, confiance, adaptabilite, protocoles, gestes, materiel, organisation, patient, total_score]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erreur POST evaluation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Site Journal de Stage démarré sur http://0.0.0.0:${PORT}`);
+  console.log(`📔 Accède au site depuis ton navigateur !`);
+});
