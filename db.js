@@ -33,9 +33,6 @@ async function initDatabase() {
         user_id VARCHAR(255) NOT NULL DEFAULT 'default_user',
         date DATE NOT NULL,
         mood VARCHAR(50) NOT NULL,
-        actes TEXT,
-        reflexions TEXT,
-        apprentissages TEXT,
         note TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(stage_id, date)
